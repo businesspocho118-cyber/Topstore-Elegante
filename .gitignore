@@ -32,7 +32,3 @@ next-env.d.ts
 
 # agent scratch/skills clone
 /.agent/
-
-# cloudflare / opennext
-/.open-next/
-/.wrangler/

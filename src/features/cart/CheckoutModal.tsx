@@ -2,13 +2,38 @@
 
 import { useState } from "react";
 import { X, CheckCircle2, MessageCircle, Loader2 } from "lucide-react";
+import { z } from "zod";
 import { useCartStore } from "./useCartStore";
 import {
   buildWhatsAppOrderUrl,
   calculateOrderTotals,
   formatCOP,
 } from "@/lib/format";
+import { createSupabaseBrowserClient, getSupabaseEnv } from "@/lib/supabase/client";
 import type { CartItem, StoreSettings } from "@/lib/types";
+
+const orderItemSchema = z.object({
+  product_id: z.string().min(1),
+  variant_id: z.string().min(1),
+  product_name: z.string().min(1),
+  color_name: z.string().min(1),
+  size: z.string().min(1).max(20),
+  quantity: z.number().int().min(1).max(50),
+  unit_price: z.number().int().min(0),
+});
+
+const createOrderSchema = z.object({
+  customer_name: z.string().trim().min(2, "Ingresa tu nombre completo").max(120),
+  customer_phone: z.string().trim().min(7, "Ingresa un número de WhatsApp válido").max(40),
+  customer_city: z.string().trim().min(2, "Ingresa tu ciudad").max(80),
+  customer_address: z.string().trim().min(4, "Ingresa tu dirección de envío").max(240),
+  payment_method: z.string().trim().min(2).max(80).default("WhatsApp / Transferencia"),
+  notes: z.string().trim().max(500).optional().default(""),
+  items: z.array(orderItemSchema).min(1, "Agrega al menos una prenda"),
+});
+
+const uuidRegex =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 interface CheckoutModalProps {
   settings: StoreSettings;
@@ -46,50 +71,98 @@ export function CheckoutModal({ settings, onClose }: CheckoutModalProps) {
     const snapshotItems: CartItem[] = [...items];
 
     try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          customer_city: customerCity,
-          customer_address: customerAddress,
-          payment_method: paymentMethod,
-          notes,
-          items: snapshotItems.map((i) => ({
-            product_id: i.product_id,
-            variant_id: i.variant_id,
-            product_name: i.product_name,
-            color_name: i.color_name,
-            size: i.size,
-            quantity: i.quantity,
-            unit_price: i.unit_price,
-          })),
-        }),
+      const parsed = createOrderSchema.safeParse({
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        customer_city: customerCity,
+        customer_address: customerAddress,
+        payment_method: paymentMethod,
+        notes,
+        items: snapshotItems.map((i) => ({
+          product_id: i.product_id,
+          variant_id: i.variant_id,
+          product_name: i.product_name,
+          color_name: i.color_name,
+          size: i.size,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+        })),
       });
 
-      const payload = await response.json();
-      if (!response.ok) {
-        setError(payload.error || "Revisa los campos e intenta nuevamente.");
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? "Datos de pedido inválidos");
         setSubmitting(false);
         return;
       }
 
-      const orderData = payload.order as {
+      const data = parsed.data;
+      const allItemsHaveUuid = data.items.every(
+        (item) => uuidRegex.test(item.product_id) && uuidRegex.test(item.variant_id)
+      );
+
+      let orderData: {
         order_number: string;
         subtotal: number;
         shipping_cost: number;
         total: number;
-      };
+      } | null = null;
+      let persisted = false;
+
+      if (getSupabaseEnv() && allItemsHaveUuid) {
+        const supabase = createSupabaseBrowserClient();
+        const { data: rpcData, error: rpcError } = await supabase.rpc(
+          "create_woman_order",
+          {
+            p_customer_name: data.customer_name,
+            p_customer_phone: data.customer_phone,
+            p_customer_city: data.customer_city,
+            p_customer_address: data.customer_address,
+            p_payment_method: data.payment_method,
+            p_notes: data.notes,
+            p_items: data.items.map((item) => ({
+              product_id: item.product_id,
+              variant_id: item.variant_id,
+              color_name: item.color_name,
+              size: item.size,
+              quantity: item.quantity,
+            })),
+          }
+        );
+
+        if (!rpcError && rpcData) {
+          orderData = rpcData as {
+            order_number: string;
+            subtotal: number;
+            shipping_cost: number;
+            total: number;
+          };
+          persisted = true;
+        }
+      }
+
+      if (!orderData) {
+        const fallbackTotals = calculateOrderTotals(
+          snapshotItems,
+          settings.default_shipping_cost
+        );
+        orderData = {
+          order_number: `TSW-${new Date().getFullYear()}-${String(
+            Math.floor(1000 + Math.random() * 9000)
+          )}`,
+          subtotal: fallbackTotals.subtotal,
+          shipping_cost: fallbackTotals.shipping_cost,
+          total: fallbackTotals.total,
+        };
+      }
 
       const whatsappUrl = buildWhatsAppOrderUrl({
         storePhone: settings.whatsapp_number,
         orderNumber: orderData.order_number,
-        customerName,
-        customerCity,
-        customerAddress,
-        paymentMethod,
-        notes,
+        customerName: data.customer_name,
+        customerCity: data.customer_city,
+        customerAddress: data.customer_address,
+        paymentMethod: data.payment_method,
+        notes: data.notes,
         items: snapshotItems,
         subtotal: orderData.subtotal,
         shippingCost: orderData.shipping_cost,
@@ -100,7 +173,7 @@ export function CheckoutModal({ settings, onClose }: CheckoutModalProps) {
       setConfirmed({
         ...orderData,
         whatsappUrl,
-        persisted: Boolean(payload.persisted),
+        persisted,
       });
     } catch {
       setError("Error de conexión al registrar el pedido. Intenta de nuevo.");

@@ -5,7 +5,7 @@ import type {
   ProductWithVariants,
   StoreSettings,
 } from "@/lib/types";
-import { createSupabaseServerClient } from "./server";
+import { createSupabaseBrowserClient, getSupabaseEnv } from "./client";
 
 export interface CatalogPayload {
   products: ProductWithVariants[];
@@ -14,15 +14,15 @@ export interface CatalogPayload {
 }
 
 export async function getPublicCatalogData(): Promise<CatalogPayload> {
-  const supabase = await createSupabaseServerClient();
-
-  if (!supabase) {
+  if (!getSupabaseEnv()) {
     return {
       products: SEED_PRODUCTS,
       settings: DEFAULT_STORE_SETTINGS,
       dataSource: "local-fallback",
     };
   }
+
+  const supabase = createSupabaseBrowserClient();
 
   try {
     const [productsRes, variantsRes, settingsRes] = await Promise.all([
