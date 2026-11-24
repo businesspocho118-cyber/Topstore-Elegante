@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  --bg-canvas: #faf6f2;
+  --bg-surface: #f1e6dc;
+  --bg-champagne: #e4d1c0;
+  --bg-card: #ffffff;
+  --accent-rose-gold: #c49377;
+  --accent-rose-gold-deep: #9e6e58;
+  --accent-rose-gold-light: #e8c7b0;
+  --accent-dusty-rose: #b06c6b;
+  --accent-dusty-rose-deep: #8f504f;
+  --text-primary: #2b1f1b;
+  --text-secondary: #6e5a50;
+  --text-muted: #8c766a;
+  --border-subtle: #e5d6c8;
+  --border-strong: #d4bfad;
+}
+
+@theme inline {
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-champagne: var(--bg-champagne);
+  --color-card: var(--bg-card);
+  --color-rose-gold: var(--accent-rose-gold);
+  --color-rose-gold-deep: var(--accent-rose-gold-deep);
+  --color-rose-gold-light: var(--accent-rose-gold-light);
+  --color-dusty-rose: var(--accent-dusty-rose);
+  --color-dusty-rose-deep: var(--accent-dusty-rose-deep);
+  --color-ink: var(--text-primary);
+  --color-ink-soft: var(--text-secondary);
+  --color-ink-muted: var(--text-muted);
+  --color-line: var(--border-subtle);
+  --color-line-strong: var(--border-strong);
+  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+}
+
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #e4d1c0;
+  color: #2b1f1b;
+}
+
+.font-display {
+  font-family: var(--font-cormorant), Georgia, serif;
+}
+
+.rose-gold-gradient {
+  background: linear-gradient(135deg, #d7a686 0%, #b58d77 48%, #9e6e58 100%);
+}
+
+.rose-gold-text {
+  background: linear-gradient(135deg, #b58268 0%, #8f5c47 55%, #b06c6b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.editorial-glass {
+  background: rgba(250, 246, 242, 0.84);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.editorial-hairline {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent-rose-gold) 25%,
+    var(--accent-dusty-rose) 50%,
+    var(--accent-rose-gold) 75%,
+    transparent 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

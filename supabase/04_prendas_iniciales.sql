@@ -1,0 +1,23 @@
+-- BLOQUE 4: Carga inicial de las 6 prendas (A–F) y sus 13 colores (28 líneas)
+with
+pa as (insert into public.woman_products (ref_code,slug,name,category,description,fabric_care,price,compare_at_price,sizes,is_featured,sort_order) values ('A','blusa-capa-asimetrica-aura','Blusa Capa Asimétrica Aura','Blusas','Silueta fluida estilo capa con caída asimétrica en gasa ligera y cintura drapeada.','Chifón crepé suave. Lavar a mano en frío.',145000,175000,array['XS','S','M','L'],true,1) on conflict (ref_code) do update set name=excluded.name returning id),
+pb as (insert into public.woman_products (ref_code,slug,name,category,description,fabric_care,price,compare_at_price,sizes,is_featured,sort_order) values ('B','trench-corto-cinturado-milano','Trench Corto Cinturado Milano','Abrigos y Chaquetas','Gabardina corta estructurada de cuello alto, doble botonadura carey dorada y cinturón lazo.','Paño ligero con forro. Limpieza en seco o frío.',235000,279000,array['S','M','L'],true,2) on conflict (ref_code) do update set name=excluded.name returning id),
+pc as (insert into public.woman_products (ref_code,slug,name,category,description,fabric_care,price,compare_at_price,sizes,is_featured,sort_order) values ('C','sueter-trenzado-cuello-v-heritage','Suéter Trenzado Cuello V Heritage','Tejidos','Suéter clásico de punto trenzado cable-knit con escote en V y bordado ecuestre sutil.','Punto mezcla algodón premium. Secar en plano.',165000,null,array['XS','S','M','L'],true,3) on conflict (ref_code) do update set name=excluded.name returning id),
+pd as (insert into public.woman_products (ref_code,slug,name,category,description,fabric_care,price,compare_at_price,sizes,is_featured,sort_order) values ('D','chaqueta-cropped-presillas-velvet','Chaqueta Cropped Presillas Velvet','Abrigos y Chaquetas','Chaqueta bomber corta aterciopelada con cuello alto, cremallera dorada y presillas decorativas.','Gamuza aterciopelada. Lavar al revés en frío.',215000,249000,array['S','M','L'],false,4) on conflict (ref_code) do update set name=excluded.name returning id),
+pe as (insert into public.woman_products (ref_code,slug,name,category,description,fabric_care,price,compare_at_price,sizes,is_featured,sort_order) values ('E','chaqueta-ecocuero-asimetrica-luxe','Chaqueta Ecocuero Asimétrica Luxe','Abrigos y Chaquetas','Chaqueta biker estructurada en ecocuero texturizado con cuello alto y cierre diagonal asimétrico.','Ecocuero durable. Limpiar con paño húmedo.',255000,295000,array['S','M','L'],true,5) on conflict (ref_code) do update set name=excluded.name returning id),
+pf as (insert into public.woman_products (ref_code,slug,name,category,description,fabric_care,price,compare_at_price,sizes,is_featured,sort_order) values ('F','jean-flare-tiro-alto-silhouette','Jean Flare Tiro Alto Silhouette','Pantalones y Jeans','Jean bota campana tiro alto con horma estilizada de realce natural y denim stretch.','Denim premium stretch. Lavar al revés en frío.',179000,null,array['6','8','10','12','14'],false,6) on conflict (ref_code) do update set name=excluded.name returning id)
+insert into public.woman_product_variants (product_id,color_index,color_name,color_hex,images,stock)
+select id,1,'Negro Ónix','#141414',array['/media/garments/a-1.0.jpeg'],12 from pa union all
+select id,2,'Blanco Marfil','#F8F7F4',array['/media/garments/a-2.0.jpeg'],12 from pa union all
+select id,1,'Café Espresso','#3E2723',array['/media/garments/b-1.0.jpeg','/media/garments/b-1.1.jpeg'],10 from pb union all
+select id,2,'Beige Arena','#CBB9A1',array['/media/garments/b-2.0.jpeg','/media/garments/b-2.1.jpeg'],10 from pb union all
+select id,1,'Crema Vainilla','#EDE4D3',array['/media/garments/c-1.0.jpeg','/media/garments/c-1.1.jpeg','/media/garments/c-1.2.jpeg'],14 from pc union all
+select id,2,'Azul Marino Real','#18254A',array['/media/garments/c-2.0.jpeg','/media/garments/c-2.1.jpeg','/media/garments/c-2.2.jpeg'],14 from pc union all
+select id,1,'Café Moka','#422B22',array['/media/garments/d-1.0.jpeg','/media/garments/d-1.1.jpeg'],10 from pd union all
+select id,2,'Beige Champaña','#D9CEBE',array['/media/garments/d-2.0.jpeg','/media/garments/d-2.1.jpeg'],10 from pd union all
+select id,1,'Vino Borgoña','#5A1A26',array['/media/garments/e-1.0.jpeg'],8 from pe union all
+select id,2,'Café Chocolate','#44261C',array['/media/garments/e-2.0.jpeg'],8 from pe union all
+select id,3,'Negro Nocturno','#18181A',array['/media/garments/e-3.0.jpeg'],8 from pe union all
+select id,1,'Denim Índigo Oscuro','#1F3557',array['/media/garments/f-1.1.jpeg','/media/garments/f-1.0.jpeg'],15 from pf union all
+select id,2,'Crudo Marfil','#EAE3D2',array['/media/garments/f-2.1.jpeg','/media/garments/f-2.0.jpeg'],15 from pf
+on conflict (product_id,color_index) do nothing;
